@@ -34,6 +34,7 @@ app.post("/api/users", async function (req, res) {
   } else {
     let newUser = {
       username: username,
+      log: [{ description: "", duration: 0, date: "" }], // initialize 'log' with a dummy exercise
     };
 
     const result = await database
@@ -96,7 +97,7 @@ app.post("/api/users/:_id/exercises", async function (req, res) {
     // Update the user document
     await collection.updateOne(
       { _id: new ObjectId(id) },
-      { $push: { logs: exercise } }
+      { $push: { log: exercise } }
     );
 
     res.json({
@@ -114,10 +115,16 @@ app.post("/api/users/:_id/exercises", async function (req, res) {
 
 app.get("/api/users/:_id/logs", async function (req, res) {
   const id = req.params._id;
-  //query: from, to, limit
   const from = req.query.from ? new Date(req.query.from) : new Date(0);
   const to = req.query.to ? new Date(req.query.to) : new Date();
-  const limit = parseInt(req.query.limit, 10);
+  let limit;
+  if (req.query.limit) {
+    limit = Number(req.query.limit);
+    if (isNaN(limit)) {
+      return res.status(400).send({ error: "Limit should be a number" });
+    }
+  }
+
   const collection = database.db("exercise_tracker").collection("users");
 
   try {
@@ -126,21 +133,24 @@ app.get("/api/users/:_id/logs", async function (req, res) {
       return res.status(400).send({ error: "invalid user" });
     }
 
-    // const logs = user.logs;
-    // const count = user.logs.length;
+    let filteredLog = user.log.filter((item) => {
+      const logDate = new Date(item.date);
+      return logDate >= from && logDate <= to;
+    });
 
-    const fileredLogs = user.logs
-      .filter((log) => {
-        const logDate = new Date(log.date);
-        return logDate >= from && logDate <= to;
-      })
-      .slice(0, limit);
+    if (limit !== undefined) {
+      filteredLog = filteredLog.slice(0, limit);
+    }
 
     res.json({
       username: user.username,
-      count: fileredLogs.length,
+      count: filteredLog.length,
       _id: id,
-      log: fileredLogs,
+      log: filteredLog.map((item) => ({
+        description: String(item.description),
+        duration: Number(item.duration),
+        date: new Date(item.date).toDateString(), // Ensures date is in 'yyyy-mm-dd' format
+      })),
     });
   } catch (err) {
     console.log(err);
