@@ -119,7 +119,7 @@ app.get("/api/users/:_id/logs", async function (req, res) {
   const to = req.query.to ? new Date(req.query.to) : new Date();
   const limit = parseInt(req.query.limit, 10);
   const collection = database.db("exercise_tracker").collection("users");
-  
+
   try {
     const user = await collection.findOne({ _id: new ObjectId(id) });
     if (!user) {
@@ -128,17 +128,17 @@ app.get("/api/users/:_id/logs", async function (req, res) {
 
     // const logs = user.logs;
     // const count = user.logs.length;
-    
+
     const fileredLogs = user.logs
-    .filter( log => {
-      const logDate = new Date(log.date)
-      return logDate >= from && logDate <= to
-    })
-    .slice(0, limit)
-    
+      .filter((log) => {
+        const logDate = new Date(log.date);
+        return logDate >= from && logDate <= to;
+      })
+      .slice(0, limit);
+
     res.json({
       username: user.username,
-      count: fileredLogs.lenghth,
+      count: fileredLogs.length,
       _id: id,
       logs: fileredLogs,
     });
