@@ -140,7 +140,7 @@ app.get("/api/users/:_id/logs", async function (req, res) {
       username: user.username,
       count: fileredLogs.length,
       _id: id,
-      logs: fileredLogs,
+      log: fileredLogs,
     });
   } catch (err) {
     console.log(err);
